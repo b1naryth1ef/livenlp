@@ -1,7 +1,8 @@
 from producer import Parent
 from twitter import TwitterFilterProducer, TwitterProducer
+from reddit import RedditProducer
 
-parent = Parent([TwitterProducer()])
+parent = Parent([RedditProducer(), TwitterProducer()])
 parent.start()
 raw_input()
 

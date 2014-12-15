@@ -3,7 +3,17 @@ from influxdb import InfluxDBClient
 import string
 import datetime
 
-client = InfluxDBClient('localhost', 8086, 'root', 'root', 'nlp')
+client = InfluxDBClient('localhost', 8086, 'root', 'root', 'reddit')
+
+class RedditConsumer(object):
+    def consume(self, obj):
+        client.write_points([{
+            "name": "post_count",
+            "columns": ["time", "sub", "nsfw", "self"],
+            "points": [
+                [int(obj["created_utc"]), obj["subreddit"], obj["over_18"], obj["is_self"]]
+            ]
+        }])
 
 class NLPConsumer(object):
     def consume(self, obj):
@@ -12,6 +22,7 @@ class NLPConsumer(object):
 
         blob = TextBlob(obj['text'].lower())
         time = datetime.datetime.strptime(obj['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+        print blob.sentiment.polarity
 
         points = []
         for entry in blob.tags:
@@ -20,19 +31,18 @@ class NLPConsumer(object):
             if len(word) == 1: continue
             points.append(word)
 
-        whence = int((time - datetime.datetime(1970,1,1)).total_seconds())
         client.write_points([{
             "name": "word",
             "columns": ["time", "word"],
             "points": [
-                [whence, word] for word in points
+                [int((time - datetime.datetime(1970,1,1)).total_seconds()), word] for word in points
             ]
         }])
 
         client.write_points([{
-            "name": "tweets",
-            "columns": ["time", "screen_name", "followers_count", "polarity"],
+            "name": "polarity",
+            "columns": ["time", "polarity"],
             "points": [
-                [whence, obj["user"]["screen_name"], obj["user"]["followers_count"], blob.sentiment.polarity]
+                [int((time - datetime.datetime(1970,1,1)).total_seconds()), blob.sentiment.polarity]
             ]
         }])

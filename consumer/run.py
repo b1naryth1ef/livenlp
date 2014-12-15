@@ -3,6 +3,7 @@ import sys
 from multiprocessing import Process
 from consumer import Consumer
 from nlp_consumer import NLPConsumer
+from reddit_consumer import RedditConsumer
 
 q = Consumer.make_queue()
 c = Consumer("twitter")
@@ -15,7 +16,14 @@ else:
 p = Process(target=c.run, args=(q, ))
 p.start()
 
+def reddit():
+    reddit = RedditConsumer()
+    while True:
+        reddit.consume(q.get(True))
 
-nlp = NLPConsumer()
-while True:
-    nlp.consume(q.get(True))
+def nlp():
+    nlp = NLPConsumer()
+    while True:
+        nlp.consume(q.get(True))
+
+nlp()
